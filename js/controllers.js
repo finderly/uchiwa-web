@@ -714,7 +714,7 @@ controllerModule.controller('SilencedModalController', ['backendService', 'conf'
     $scope.items = items;
     $scope.silencedCount = $filter('filter')(items, {silenced: true}).length;
     $scope.itemType = items[0].hasOwnProperty('client') ? 'check' : 'client';
-    $scope.options = {expire: 900, reason: '', to: moment().add(1, 'h').format(conf.date)};
+    $scope.options = {expire: 900, reason: '', to: moment().add(1, 'h').format(conf.date), time: moment('11:00:00', conf.time).format(conf.time)};
 
     $scope.silenced = [];
     var getSilencedIDs = function(data) {
@@ -747,6 +747,11 @@ controllerModule.controller('SilencedModalController', ['backendService', 'conf'
           notification('error', 'Please enter a date for the custom expiration.');
           return false;
         }
+      } else if ($scope.options.expire === 'tomorrow' || $scope.options.expire === 'monday') {
+        if (angular.isUndefined($scope.options.time)) {
+          notification('error', 'Please enter a time for the expiration.');
+          return false;
+        }
       }
 
       var promises = [];
@@ -771,6 +776,16 @@ controllerModule.controller('SilencedModalController', ['backendService', 'conf'
           if ($scope.options.expire === 'custom') {
             var now = new Date().getTime();
             payload.expire = silencedService.secondsBetweenDates(now, $scope.options.to);
+          } else if ($scope.options.expire === 'tomorrow') {
+            var now = moment();
+            var start = now.format(conf.date);
+            var end = moment(stash.content.time, conf.time).add(1, 'day');
+            payload.expire = silencedService.secondsBetweenDates(start, end);
+          } else if ($scope.options.expire === 'monday') {
+            var now = moment();
+            var start = now.format(conf.date);
+            var end = moment(stash.content.time, conf.time).day(8);
+            payload.expire = silencedService.secondsBetweenDates(start, end);
           }
 
           if ($scope.options.expire > 0) {
