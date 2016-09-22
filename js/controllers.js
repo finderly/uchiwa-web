@@ -779,12 +779,12 @@ controllerModule.controller('SilencedModalController', ['backendService', 'conf'
           } else if ($scope.options.expire === 'tomorrow') {
             var now = moment();
             var start = now.format(conf.date);
-            var end = moment(stash.content.time, conf.time).add(1, 'day');
+            var end = moment($scope.options.time, conf.time).add(1, 'day');
             payload.expire = silencedService.secondsBetweenDates(start, end);
           } else if ($scope.options.expire === 'monday') {
             var now = moment();
             var start = now.format(conf.date);
-            var end = moment(stash.content.time, conf.time).day(8);
+            var end = moment($scope.options.time, conf.time).day(8);
             payload.expire = silencedService.secondsBetweenDates(start, end);
           }
 
