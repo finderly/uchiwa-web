@@ -22,6 +22,8 @@
     <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="900">15 minutes</label>
     <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="3600">1 hour</label>
     <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="86400">24 hours</label>
+    <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="'tomorrow'">Tomorrow</label>
+    <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="'monday'">Monday</label>
     <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="'custom'">Custom</label>
     <label class="btn btn-xs btn-default" ng-model="options.expire" btn-radio="-1">No expiration</label>
   </div>
@@ -30,6 +32,12 @@
     <div class="mb15" style="float:left">
       <h5>Expiration date</h5>
       <input type="text" ng-model="options.to" placeholder="yyyy-mm-dd hh:mm:ss">
+    </div>
+  </div>
+  <div ng-show="options.expire === 'tomorrow' || options.expire === 'monday'">
+    <div class="mb15" style="float:left">
+      <h5>Time</h5>
+      <input type="text" ng-model="options.time" placeholder="hh:mm:ss">
     </div>
   </div>
   <div style="clear:both">
