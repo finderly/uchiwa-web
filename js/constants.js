@@ -3,6 +3,7 @@ var constantModule = angular.module('uchiwa.constants', []);
 constantModule.value('conf', {
   appName: 'Uchiwa',
   date: 'YYYY-MM-DD HH:mm:ss',
+  time: 'HH:mm:ss',
   enterprise: false,
   hideSilenced: false,
   hideClientsSilenced: false,
