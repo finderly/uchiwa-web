@@ -13,6 +13,11 @@
   white-space: pre-line;
 }
 
+.element-view .value-output {
+  overflow-wrap: break-word;
+  white-space: pre;
+}
+
 .element-view .value img {
   display: block;
   max-width: 100%;
