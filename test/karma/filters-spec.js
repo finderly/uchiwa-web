@@ -3,12 +3,20 @@
 describe('filters', function () {
 
   var $filter;
-  var conf;
+  var mockConfig;
 
   beforeEach(module('uchiwa'));
-  beforeEach(inject(function (_$filter_, _conf_) {
+
+  beforeEach(function() {
+    mockConfig = jasmine.createSpyObj('mockConfig', ['dateFormat']);
+    mockConfig.dateFormat.and.callFake(function() {return 'YYYY-MM-DD HH:mm:ss'});
+    module(function($provide) {
+      $provide.value('Config', mockConfig);
+    });
+  });
+
+  beforeEach(inject(function (_$filter_) {
     $filter = _$filter_;
-    conf = _conf_;
   }));
 
   describe('arrayLength', function () {
@@ -191,8 +199,7 @@ describe('filters', function () {
   });
 
   describe('filterSubscriptions', function () {
-
-    it('should filter subscriptions', inject(function (filterSubscriptionsFilter, $filter, conf) {
+    it('should filter subscriptions', inject(function (filterSubscriptionsFilter, $filter) {
       expect(filterSubscriptionsFilter([{name: 'test1', subscriptions: []}, {name: 'test2', subscriptions: ['linux']}], 'linux')).toEqual([{name: 'test2', subscriptions: ['linux']}]);
       expect(filterSubscriptionsFilter([{name: 'test1', subscriptions: []}, {name: 'test2', subscriptions: ['linux']}], '')).toEqual([{name: 'test1', subscriptions: []}, {name: 'test2', subscriptions: ['linux']}]);
     }));
@@ -306,6 +313,68 @@ describe('filters', function () {
     }));
   });
 
+  describe('regex', function () {
+    it('returns all items if the query is empty', inject(function (regexFilter) {
+      var items = [{foo: 'bar'}];
+      expect(regexFilter(items, '')).toEqual(items);
+    }));
+
+    it('performs a simple search with a value', inject(function (regexFilter) {
+      var items = [
+        {foo: 'bar'},
+        {qux: 'bar'},
+        {baz: 'foo'}
+      ];
+      expect(regexFilter(items, 'bar')).toEqual([items[0], items[1]]);
+    }));
+
+    it('performs a simple search with a key-value', inject(function (regexFilter) {
+      var items = [
+        {foo: 'bar'},
+        {qux: 'bar'},
+        {baz: 'foo'}
+      ];
+      expect(regexFilter(items, 'foo:bar')).toEqual([items[0]]);
+    }));
+
+    it('performs a regex search with a value', inject(function (regexFilter) {
+      var items = [
+        {foo: 'canada'},
+        {bar: 'vatican'},
+        {qux: 'cameroon'}
+      ];
+      expect(regexFilter(items, 'can+')).toEqual([items[0], items[1]]);
+    }));
+
+    it('performs a regex search with a value within an object of an object', inject(function (regexFilter) {
+      var items = [
+        {foo: 'canada'},
+        {foo: {baz: 'vatican'}},
+        {qux: {baz: 'cameroon'}}
+      ];
+      expect(regexFilter(items, 'can+')).toEqual([items[0], items[1]]);
+    }));
+
+    it('performs a regex search with a key-value', inject(function (regexFilter) {
+      var items = [
+        {foo: 'canada'},
+        {foo: 'vatican'},
+        {foo: 'cameroon'}
+      ];
+      expect(regexFilter(items, 'foo:can*')).toEqual(items);
+      expect(regexFilter(items, 'foo:can+')).toEqual([items[0], items[1]]);
+      expect(regexFilter(items, 'foo:^can')).toEqual([items[0]]);
+    }));
+
+    it('performs a search within an array', inject(function (regexFilter) {
+      var items = [
+        {foo: ['foo', 'bar']},
+        {foo: ['foo', 'baz']}
+      ];
+      expect(regexFilter(items, 'foo:bar')).toEqual([items[0]]);
+    }));
+  });
+
   describe('richOutput', function () {
     it('handles bogus values', inject(function (richOutputFilter) {
       expect(richOutputFilter(null)).toBe('');
@@ -322,12 +391,16 @@ describe('filters', function () {
   });
 
   describe('setMissingProperty', function () {
-
     it('should set to false a missing property', inject(function (setMissingPropertyFilter) {
       expect(setMissingPropertyFilter(undefined)).toBe(false);
       expect(setMissingPropertyFilter({foo: 'bar'})).toEqual({foo: 'bar'});
     }));
-
   });
 
+  // describe('unique', function () {
+  //   it('returns unique objects based on a key', inject(function (uniqueFilter) {
+  //     var objects = [{dc: 'us-east-1', name: 'foo'}, {dc: 'us-east-1', name: 'bar'}, {dc: 'us-west-1', name: 'foo'}];
+  //     expect(uniqueFilter(objects, 'name').length).toBe(2);
+  //   }));
+  // });
 });

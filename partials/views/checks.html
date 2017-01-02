@@ -1,6 +1,6 @@
 <ng-include src="partialsPath + '/navbar.html'"></ng-include>
 <ng-include src="partialsPath + '/sidebar.html'"></ng-include>
-<div class="container-fluid checks">
+<div class="container-fluid checks" ng-cloak>
   <div class="row-fluid">
     <div class="col-lg-12">
       <div class="panel panel-default">
@@ -16,9 +16,9 @@
               <!--dc-->
               <ng-include src="partialsPath + '/panel/dc.html'"></ng-include>
               <!--actions-->
-              <panel-actions data="checks" refresh-fn="issueCheckRequest" refresh-legend="Issue Check Request" ng-if="!user.isReadOnly()"></panel-actions>
+              <panel-actions data="checks" refresh-fn="issueCheckRequest" refresh-legend="Issue Check Request" silence-fn="silenceChecks" ng-if="!user.isReadOnly()"></panel-actions>
               <!--limit-->
-              <panel-limit data="checks" filters="filters" permalink="permalink"></panel-limit>
+              <panel-limit data="filtered" filters="filters" permalink="permalink"></panel-limit>
               <!--search-->
               <ng-include src="partialsPath + '/panel/search.html'"></ng-include>
             </div>
@@ -36,8 +36,9 @@
                 <th ng-click="predicate = 'name'; reverse=!reverse">Name <i class="fa fa-sort"></i></th>
                 <th ng-click="predicate = 'command'; reverse=!reverse">Command <i class="fa fa-sort"></i></th>
                 <th>Subscribers</th>
-                <th ng-click="predicate = 'dc'; reverse=!reverse"><i class="fa fa-cloud" tooltip-placement="top" tooltip-trigger tooltip="Datacenter"></i> <i class="fa fa-sort"></i></th>
-                <th ng-click="predicate = 'interval'; reverse=!reverse"><i class='fa fa-clock-o' tooltip-placement="top" tooltip-trigger tooltip="Interval"></i> <i class="fa fa-sort"></i></th>
+                <th ng-click="predicate = 'ttl'; reverse=!reverse"><i class="fa fa-hourglass-start" tooltip-placement="top" tooltip-trigger uib-tooltip="TTL"></i></th>
+                <th ng-click="predicate = 'dc'; reverse=!reverse"><i class="fa fa-cloud" tooltip-placement="top" tooltip-trigger uib-tooltip="Datacenter"></i> <i class="fa fa-sort"></i></th>
+                <th ng-click="predicate = 'interval'; reverse=!reverse"><i class='fa fa-clock-o' tooltip-placement="top" tooltip-trigger uib-tooltip="Interval"></i> <i class="fa fa-sort"></i></th>
               </tr>
             </thead>
             <tbody>
@@ -47,6 +48,10 @@
                 <td class="main">{{ check.name }}</td>
                 <td>{{ check.command }}</td>
                 <td>{{ check.subscribers | arrayToString }}</td>
+                <td>
+                  {{ check.ttl }}
+                  <span ng-if="check.ttl === undefined">N/A</span>
+                </td>
                 <td class="dc">{{ check.dc }}</td>
                 <td>{{ check.interval }}</td>
               </tr>

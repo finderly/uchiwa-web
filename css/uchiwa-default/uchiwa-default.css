@@ -3,6 +3,7 @@
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -70,10 +71,13 @@ hr {
   font-weight: 400;
   padding-top: 10px; }
 
+.mb10 {
+  margin-bottom: 15px; }
+
 .mb15 {
   margin-bottom: 15px; }
 
-.mg-t-md {
+.mt25 {
   margin-top: 25px; }
 
 .mg-r-sm {
@@ -136,6 +140,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -163,6 +168,8 @@ pre.hljs .hljs-string {
     background-color: #EA5443; }
   .badge-unknown {
     background-color: #9C9990; }
+  .badge-silenced {
+    background-color: #3F283D; }
   .badge-default, .badge-blue {
     background-color: #2C394A; }
 
@@ -174,6 +181,43 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
+/* Dashboard */
+/* Dropdown */
+/* Login */
+/* Modal */
+/* Nav */
+/* Navbar */
+/* Search */
+/* Sidebar */
+/* Panels */
+/* Tables */
+/* Timestamp */
+/* Wells */
+#error {
+  display: none; }
+
+.bootstrap-error #error {
+  display: block !important;
+  margin: 0 auto;
+  text-align: center; }
+
+.bootstrap-error .error-code {
+  bottom: 60%;
+  color: #2d353c;
+  font-size: 96px;
+  line-height: 100px; }
+
+.bootstrap-error .error-desc {
+  font-size: 14px;
+  color: #647788; }
+
+/* Colors */
+/* Body, Sections and Headers */
+/* Breadcrumb */
+/* Buttons */
+/* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -212,6 +256,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -252,6 +297,8 @@ pre.hljs .hljs-string {
     background-color: #EA5443; }
   .circle-unknown {
     background-color: #9C9990; }
+  .circle-silenced {
+    background-color: #3F283D; }
   .circle-default, .circle-blue {
     background-color: #2C394A; }
 
@@ -259,6 +306,61 @@ pre.hljs .hljs-string {
   color: #ffffff;
   background-color: #5F97FB;
   border: 0px; }
+
+/* Colors */
+/* Body, Sections and Headers */
+/* Breadcrumb */
+/* Buttons */
+/* Code */
+/* Console */
+/* Dashboard */
+/* Dropdown */
+/* Login */
+/* Modal */
+/* Nav */
+/* Navbar */
+/* Search */
+/* Sidebar */
+/* Panels */
+/* Tables */
+/* Timestamp */
+/* Wells */
+.console-collection {
+  display: block;
+  position: absolute;
+  width: 100%;
+  top: 100%;
+  z-index: 100;
+  background-color: #5F97FB; }
+
+.console-collection .form-control {
+  background-color: #5F97FB;
+  color: white;
+  border-radius: 0;
+  border-width: 0;
+  box-shadow: none;
+  border: 0px;
+  padding: 8px 0;
+  font-size: 22px; }
+
+.console-collection .form-control::-webkit-input-placeholder {
+  color: white; }
+.console-collection .form-control:-moz-placeholder {
+  color: white; }
+.console-collection .form-control::-moz-placeholder {
+  color: white; }
+.console-collection .form-control:-ms-input-placeholder {
+  color: white; }
+
+.console-collection .input-group {
+  margin-bottom: 0px; }
+
+.console-collection .input-group-btn .btn {
+  margin-left: 0px;
+  font-size: 20px; }
+
+.console-collection .input-group-btn .btn:hover {
+  border: 0; }
 
 .container-fluid {
   padding-left: 0;
@@ -369,6 +471,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -419,6 +522,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -459,6 +563,36 @@ pre.hljs .hljs-string {
   overflow: hidden;
   white-space: nowrap; }
 
+.element-view .widget-chevon {
+  float: right;
+  line-height: 40px;
+  padding-right: 20px; }
+
+.element-view .widget-icon {
+  background-color: #2C394A;
+  color: #fff;
+  display: inline-block;
+  float: left !important;
+  margin-right: 15px;
+  vertical-align: middle;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 40px; }
+
+.element-view .widget-text {
+  display: inline-block; }
+
+.element-view .widget .subtitle {
+  font-size: 12px;
+  text-transform: capitalize; }
+
+.element-view .widget .title {
+  display: block;
+  font-size: 18px; }
+
 .fa-stack {
   height: 1.4em;
   line-height: 1.4em;
@@ -472,6 +606,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -494,11 +629,19 @@ pre.hljs .hljs-string {
 .form-control.subscriptions {
   width: 140px; }
 
+.mass-autocomplete input {
+  margin-top: 10px;
+  width: 33%; }
+
+.mass-autocomplete .datacenter {
+  padding: 5px; }
+
 /* Colors */
 /* Body, Sections and Headers */
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -521,6 +664,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -554,6 +698,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -575,6 +720,7 @@ pre.hljs .hljs-string {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -607,6 +753,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -683,6 +830,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -695,8 +843,8 @@ li.timestamp .relative-timestamp {
 /* Tables */
 /* Timestamp */
 /* Wells */
-.modal-header {
-  border-bottom: 1px solid #e5e5e5; }
+.modal-body .ac-container {
+  position: inherit; }
 
 .modal-content {
   background-color: #FFFFFF;
@@ -708,11 +856,15 @@ li.timestamp .relative-timestamp {
 .modal-footer {
   border-top: 1px solid #e5e5e5; }
 
+.modal-header {
+  border-bottom: 1px solid #e5e5e5; }
+
 /* Colors */
 /* Body, Sections and Headers */
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -759,6 +911,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -808,6 +961,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -831,6 +985,8 @@ li.timestamp .relative-timestamp {
     background-color: #EA5443; }
   .panel-unknown {
     background-color: #9C9990; }
+  .panel-silenced {
+    background-color: #3F283D; }
   .panel-default, .panel-blue {
     background-color: #2C394A; }
 
@@ -901,37 +1057,58 @@ li.timestamp .relative-timestamp {
   color: #ffffff;
   background-color: #6A5E98; }
 
-.popover-menu .panel {
+.uchiwa-popover {
+  background-color: #ffffff;
+  width: 175px; }
+
+.uchiwa-popover .popover-content {
+  padding: 5px; }
+
+.uchiwa-popover.right > .arrow {
+  border-right-color: #ffffff; }
+
+.uchiwa-popover.right > .arrow:after {
+  border-right-color: #ffffff; }
+
+.uchiwa-popover .box {
+  border-radius: 4px;
+  color: #ffffff;
   font-size: 13px;
-  font-weight: 400;
-  border: 0px;
-  margin-bottom: 0px;
-  color: #FFFFFF; }
+  font-weight: 700;
+  margin-bottom: 5px;
+  padding: 5px;
+  text-align: center; }
 
-.popover-menu .panel-body {
-  padding-bottom: 0; }
+.uchiwa-popover .box:last-child {
+  margin-bottom: 0; }
 
-.popover-menu .panel-title {
-  margin-top: 10px; }
+.uchiwa-popover .box.critical {
+  background-color: #EA5443; }
 
-.popover-menu .panel .total {
-  font-size: 16px; }
+.uchiwa-popover .box.healthy {
+  background-color: #43ac6a; }
 
-.popover-menu .panel .category {
-  text-transform: uppercase;
-  font-size: 11px;
-  line-height: 0.7; }
+.uchiwa-popover .box.silenced {
+  background-color: #3F283D; }
 
-.dropdown-menu.popover-menu {
-  top: -20%;
-  left: 97%;
-  min-width: 250px; }
+.uchiwa-popover .box.total {
+  background-color: #6A5E98; }
+
+.uchiwa-popover .box.unknown {
+  background-color: #9C9990; }
+
+.uchiwa-popover .box.warning {
+  background-color: #F9BA46; }
+
+.uchiwa-popover .count {
+  font-size: 18px; }
 
 /* Colors */
 /* Body, Sections and Headers */
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -964,6 +1141,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -1001,6 +1179,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -1120,6 +1299,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -1194,6 +1374,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */
@@ -1244,6 +1425,7 @@ li.timestamp .relative-timestamp {
 /* Breadcrumb */
 /* Buttons */
 /* Code */
+/* Console */
 /* Dashboard */
 /* Dropdown */
 /* Login */

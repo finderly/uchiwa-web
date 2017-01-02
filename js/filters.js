@@ -153,7 +153,7 @@ filterModule.filter('getAckClass', function() {
   };
 });
 
-filterModule.filter('getExpirationTimestamp', ['conf', function (conf) {
+filterModule.filter('getExpirationTimestamp', ['Config', function (Config) {
   return function(expire) {
     if (angular.isUndefined(expire) || isNaN(expire)) {
       return 'Unknown';
@@ -162,7 +162,7 @@ filterModule.filter('getExpirationTimestamp', ['conf', function (conf) {
       return 'Never';
     }
     var expiration = (moment().unix() + expire) * 1000;
-    return moment(expiration).format(conf.date);
+    return moment(expiration).format(Config.dateFormat());
   };
 }]);
 
@@ -181,7 +181,7 @@ filterModule.filter('getStatusClass', function() {
   };
 });
 
-filterModule.filter('getTimestamp', ['conf', function (conf) {
+filterModule.filter('getTimestamp', ['Config', function (Config) {
   return function(timestamp) {
     if (angular.isUndefined(timestamp) || timestamp === null) {
       return '';
@@ -190,7 +190,7 @@ filterModule.filter('getTimestamp', ['conf', function (conf) {
       return timestamp;
     }
     timestamp = timestamp * 1000;
-    return moment(timestamp).format(conf.date);
+    return moment(timestamp).format(Config.dateFormat());
   };
 }]);
 
@@ -266,6 +266,50 @@ filterModule.filter('imagey', function() {
   };
 });
 
+filterModule.filter('regex', function() {
+  return function(items, query) {
+    var results = [];
+    var queries = query.split(':');
+    var pattern = '';
+
+    // If we only have a value, without a key
+    if (queries.length <= 1) {
+      pattern = new RegExp(query);
+      var testObject = function(obj) {
+        for (var k in obj) {
+          if (typeof obj[k] === 'object') {
+            if (testObject(obj[k])) {
+              return true;
+            }
+          }
+          if (pattern.test(obj[k])) {
+            return true;
+          }
+        }
+        return false;
+      };
+      // Retrieve all keys from an object
+      angular.forEach(items, function(item) {
+        if (testObject(item)) {
+          results.push(item);
+        }
+      });
+      return results;
+    }
+
+    // We have a key:value
+    var key = queries[0];
+    pattern = new RegExp(queries.slice(1).join());
+
+    for (var i = 0; i < items.length; i++) {
+      if (pattern.test(items[i][key])) {
+        results.push(items[i]);
+      }
+    }
+    return results;
+  };
+});
+
 filterModule.filter('relativeTimestamp', function() {
   return function(timestamp) {
     if (isNaN(timestamp) || timestamp.toString().length !== 10) {
@@ -292,7 +336,8 @@ filterModule.filter('richOutput', ['$filter', '$sce', '$sanitize', '$interpolate
         output = text;
       }
     } else if (typeof text === 'number' || typeof text === 'boolean') {
-      output = text.toString();
+      output = $filter('getTimestamp')(text);
+      output = output.toString();
     } else if (/^iframe:/.test(text)) {
       var iframeSrc = $sanitize(text.replace(/^iframe:/, ''));
       var exp = $interpolate('<span class="iframe"><iframe width="100%" src="{{iframeSrc}}"></iframe></span>')({ 'iframeSrc': iframeSrc });
@@ -309,5 +354,22 @@ filterModule.filter('richOutput', ['$filter', '$sce', '$sanitize', '$interpolate
 filterModule.filter('setMissingProperty', function() {
   return function(property) {
     return property || false;
+  };
+});
+
+filterModule.filter('unique', function() {
+  return function(collection, key) {
+    var results = [],
+    values = [];
+
+    angular.forEach(collection, function(item) {
+      var value = item[key];
+      if(values.indexOf(value) === -1) {
+        values.push(value);
+        results.push(item);
+      }
+    });
+
+    return results;
   };
 });

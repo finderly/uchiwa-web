@@ -44,12 +44,49 @@ factoryModule.factory('authInterceptor', function ($cookieStore, $q, $location, 
 /**
 * Sensu Data
 */
-factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $rootScope) {
-  var sensu = {aggregates: [], checks: [], client: {}, clients: [], events: [], silenced: [], stashes: [], subscriptions: []};
+factoryModule.factory('Sensu', function(backendService, Config, $interval, Notification, $q, $rootScope) {
+  var sensu = {
+    aggregate: null,
+    aggregateChecks: [],
+    aggregateClients: [],
+    aggregateResults: [],
+    aggregates: [],
+    checks: [],
+    client: {},
+    clients: [],
+    events: [],
+    health: null,
+    metrics: null,
+    silenced: [],
+    stashes: [],
+    subscriptions: []
+  };
+
+  var errorMessage = 'Unable to connect to '+ Config.appName() +'. Check your connectivity and refresh this page.';
 
   return {
+    cleanAggregate: function() {
+      sensu.aggregate = {};
+    },
+    cleanAggregateDetails: function() {
+      sensu.aggregateChecks = [];
+      sensu.aggregateClients = [];
+      sensu.aggregateResults = [];
+    },
     cleanClient: function() {
       sensu.client = {};
+    },
+    getAggregate: function() {
+      return sensu.aggregate;
+    },
+    getAggregateChecks: function() {
+      return sensu.aggregateChecks;
+    },
+    getAggregateClients: function() {
+      return sensu.aggregateClients;
+    },
+    getAggregateResults: function() {
+      return sensu.aggregateResults;
     },
     getAggregates: function() {
       return sensu.aggregates;
@@ -66,6 +103,12 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
     getEvents: function() {
       return sensu.events;
     },
+    getHealth: function() {
+        return sensu.health;
+    },
+    getMetrics: function() {
+        return sensu.metrics;
+    },
     getSilenced: function() {
       return sensu.silenced;
     },
@@ -78,10 +121,69 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
     stop: function(timer) {
       $interval.cancel(timer);
     },
+    updateAggregate: function(name, dc) {
+      var update = function() {
+        backendService.getAggregate(name, dc)
+          .success(function (data) {
+            sensu.aggregate = data;
+          })
+          .error(function(error) {
+            if (error !== null) {
+              sensu.aggregate = null;
+              console.error(JSON.stringify(error));
+            }
+          });
+      };
+      update();
+      return $interval(update, Config.refresh());
+    },
+    updateAggregateChecks: function(name, dc) {
+      var update = function() {
+        backendService.getAggregateMembers(name, 'checks', dc)
+          .success(function (data) {
+            sensu.aggregateChecks = data;
+          })
+          .error(function(error) {
+            if (error !== null) {
+              console.error(JSON.stringify(error));
+            }
+          });
+      };
+      update();
+      return $interval(update, Config.refresh());
+    },
+    updateAggregateClients: function(name, dc) {
+      var update = function() {
+        backendService.getAggregateMembers(name, 'clients', dc)
+          .success(function (data) {
+            sensu.aggregateClients = data;
+          })
+          .error(function(error) {
+            if (error !== null) {
+              console.error(JSON.stringify(error));
+            }
+          });
+      };
+      update();
+      return $interval(update, Config.refresh());
+    },
+    updateAggregateResults: function(name, severity, dc) {
+      var update = function() {
+        backendService.getAggregateResults(name, severity, dc)
+          .success(function (data) {
+            sensu.aggregateResults = data;
+          })
+          .error(function(error) {
+            if (error !== null) {
+              console.error(JSON.stringify(error));
+            }
+          });
+      };
+      update();
+      return $interval(update, Config.refresh());
+    },
     updateAggregates: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         backendService.getAggregates()
           .success(function (data) {
             sensu.aggregates = data;
@@ -93,12 +195,10 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateChecks: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         backendService.getChecks()
           .success(function (data) {
             sensu.checks = data;
@@ -110,12 +210,10 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateClient: function(client, dc) {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         if ($rootScope.skipOneRefresh) {
           $rootScope.skipOneRefresh = false;
           return;
@@ -134,12 +232,10 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
         });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateClients: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         if ($rootScope.skipOneRefresh) {
           $rootScope.skipOneRefresh = false;
           return;
@@ -155,20 +251,10 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
-    },
-    updateDashboard: function() {
-      var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
-      };
-      update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateEvents: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         if ($rootScope.skipOneRefresh) {
           $rootScope.skipOneRefresh = false;
           return;
@@ -184,20 +270,44 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
+    },
+    updateHealth: function() {
+      var update = function() {
+        backendService.getHealth()
+        .then(
+          function(result) {
+            sensu.health = result.data;
+          },
+          function(result) {
+            if (angular.isDefined(result.data) && result.data !== null) {
+              sensu.health = result.data;
+              return;
+            }
+            sensu.health = {uchiwa: errorMessage};
+          }
+        );
+      };
+      update();
+      return $interval(update, Config.refresh());
     },
     updateMetrics: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
+        backendService.getMetrics()
+        .then(
+          function(result) {
+            sensu.metrics = result.data;
+          },
+          function() {
+            Notification.error(errorMessage);
+          }
+        );
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateSilenced: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         if ($rootScope.skipOneRefresh) {
           $rootScope.skipOneRefresh = false;
           return;
@@ -213,12 +323,10 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateStashes: function() {
       var update = function() {
-        backendService.getHealth();
-        backendService.getMetrics();
         if ($rootScope.skipOneRefresh) {
           $rootScope.skipOneRefresh = false;
           return;
@@ -234,7 +342,7 @@ factoryModule.factory('Sensu', function(backendService, conf, $interval, $q, $ro
           });
       };
       update();
-      return $interval(update, conf.refresh);
+      return $interval(update, Config.refresh());
     },
     updateSubscriptions: function() {
       backendService.getSubscriptions()

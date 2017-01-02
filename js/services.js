@@ -3,63 +3,63 @@
 var serviceModule = angular.module('uchiwa.services', []);
 
 /**
-* Uchiwa
+* Aggregates Service
 */
-serviceModule.service('backendService', ['audit', 'conf', '$http', '$interval', '$location', '$rootScope',
-  function(audit, conf, $http, $interval, $location, $rootScope){
-    var errorRefresh = conf.appName+' is having trouble updating its data. Try to refresh the page if this issue persists.';
-
-    this.getResources = function(id) {
-      var resources = [];
-      var index = id.indexOf('/');
-
-      // Also support silenced ids
-      if (index === -1) {
-        index = id.indexOf(':');
-      }
-
-      resources[0] = id.substr(0, index);
-      resources[1] = id.substr(index + 1);
-
-      return resources;
+serviceModule.service('Aggregates', ['Helpers', 'Notification', '$q', '$resource', '$rootScope',
+  function (Helpers, Notification, $q, $resource, $rootScope) {
+    var Aggregates = $resource('aggregates/:name/:members/:severity',
+      {name: '@name', members: '@members', severity: '@severity'}
+    );
+    var self = this;
+    this.delete = function(id) {
+      var attributes = Helpers.splitId(id);
+      return Aggregates.delete({name: attributes[1], dc: attributes[0]}).$promise;
     };
+    this.deleteMultiple = function(filtered, selected) {
+      return Helpers.deleteMultiple(self.delete, filtered, selected)
+      .then(
+        function(result) {
+          Notification.success('The aggregates have been deleted');
+          return result;
+        },
+        function() {
+          Notification.error('Could not delete all of the aggregates');
+          return $q.reject();
+        }
+      );
+    };
+    this.deleteSingle = function(id) {
+      return self.delete(id)
+      .then(
+        function() {
+          $rootScope.skipOneRefresh = true;
+          Notification.success('The aggregate '+ id +' has been deleted');
+        },
+        function(error) {
+          Notification.error('Could not delete the aggregate '+ id);
+          return $q.reject(error);
+        }
+      );
+    };
+  }
+]);
 
+/**
+* Backend Service
+*/
+serviceModule.service('backendService', ['audit', '$http', '$interval', '$location', '$rootScope',
+  function(audit, $http, $interval, $location, $rootScope){
     this.auth = function() {
       return $http.get('auth');
     };
-    this.deleteClient = function(id) {
-      var resources = this.getResources(id);
-      if ($rootScope.enterprise) {
-        audit.log({action: 'delete_client', level: 'default', output: id});
-      }
-      return $http.delete('clients/'+resources[1]+'?dc='+resources[0]);
+    this.getAggregate = function(name, dc) {
+      return $http.get('aggregates/'+name+'?dc='+dc);
     };
-    this.deleteCheckResult = function(id) {
-      var resources = this.getResources(id);
-      return $http.delete('results/'+resources[1]+'?dc='+resources[0]);
+    this.getAggregateMembers = function(name, type, dc) {
+      return $http.get('aggregates/'+name+'/'+type+'?dc='+dc);
     };
-    this.deleteEvent = function(id) {
-      var resources = this.getResources(id);
-      return $http.delete('events/'+resources[1]+'?dc='+resources[0]);
-    };
-    this.deleteSilenced = function(payload) {
-      if ($rootScope.enterprise) {
-        audit.log({action: 'clear_silenced', level: 'default', output: payload.dc + ':' + payload.id});
-      }
-      return $http.post('silenced/clear', payload);
-    };
-    this.deleteStash = function(id) {
-      var resources = this.getResources(id);
-      if ($rootScope.enterprise) {
-        audit.log({action: 'delete_stash', level: 'default', output: id});
-      }
-      return $http.delete('stashes/'+resources[1]+'?dc='+resources[0]);
-    };
-    this.getAggregate = function(check, dc) {
-      return $http.get('aggregates/'+check+'?dc='+dc);
-    };
-    this.getAggregateIssued = function(check, dc, issued) {
-      return $http.get('aggregates/'+check+'/'+issued+'?dc='+dc);
+    this.getAggregateResults = function(name, severity, dc) {
+      return $http.get('aggregates/'+name+'/results/'+severity+'?dc='+dc);
     };
     this.getAggregates = function() {
       return $http.get('aggregates');
@@ -76,22 +76,6 @@ serviceModule.service('backendService', ['audit', 'conf', '$http', '$interval', 
     this.getClients = function() {
       return $http.get('clients');
     };
-    this.getConfig = function() {
-      if ($location.path().substring(0, 6) === '/login') {
-        return;
-      }
-      $http.get('config')
-        .success(function (data) {
-          $rootScope.config = data;
-          conf.refresh = data.Uchiwa.Refresh * 1000;
-        })
-        .error(function(error) {
-          $rootScope.$emit('notification', 'error', errorRefresh);
-          if (error !== null) {
-            console.error(JSON.stringify(error));
-          }
-        });
-    };
     this.getConfigAuth = function () {
       return $http.get('config/auth');
     };
@@ -106,7 +90,6 @@ serviceModule.service('backendService', ['audit', 'conf', '$http', '$interval', 
           }
         })
         .error(function(error) {
-          $rootScope.$emit('notification', 'error', errorRefresh);
           if (error !== null) {
             console.error(JSON.stringify(error));
           }
@@ -116,31 +99,10 @@ serviceModule.service('backendService', ['audit', 'conf', '$http', '$interval', 
       return $http.get('events');
     };
     this.getHealth = function() {
-      $http.get('health')
-        .success(function(data) {
-          $rootScope.health = data;
-        })
-        .error(function(error) {
-          $rootScope.$emit('notification', 'error', errorRefresh);
-          if (error !== null) {
-            console.error(JSON.stringify(error));
-          }
-        });
+      return $http.get('health');
     };
     this.getMetrics = function() {
-      $http.get('metrics')
-        .success(function(data) {
-          $rootScope.metrics = data;
-        })
-        .error(function(error) {
-          $rootScope.$emit('notification', 'error', errorRefresh);
-          if (error !== null) {
-            console.error(JSON.stringify(error));
-          }
-          if (angular.isUndefined($rootScope.metrics)) {
-            $rootScope.metrics = {aggregates: {total: 0}, checks: {total: 0}, clients: {critical: 0, total: 0, unknown: 0, warning: 0}, datacenters: {total: 0}, events: {critical: 0, total: 0, unknown: 0, warning: 0}, silenced: {total: 0}, stashes: {total: 0}};
-          }
-        });
+      return $http.get('metrics');
     };
     this.getSEMetrics = function(endpoint) {
       return $http.get('metrics/'+endpoint);
@@ -157,104 +119,262 @@ serviceModule.service('backendService', ['audit', 'conf', '$http', '$interval', 
     this.login = function(payload) {
       return $http.post('login', payload);
     };
-    this.postCheckRequest = function(payload) {
-      return $http.post('request', payload);
-    };
-    this.postSilenced = function(payload) {
-      return $http.post('silenced', payload);
-    };
-    this.postStash = function(payload) {
-      return $http.post('stashes', payload);
-    };
   }
 ]);
-
 /**
 * Checks Services
 */
-serviceModule.service('checksService', ['$rootScope', 'backendService', function ($rootScope, backendService) {
-  this.issueCheckRequest = function(check, dc, subscribers) {
-    var payload = {check: check, dc: dc, subscribers: subscribers};
-    return backendService.postCheckRequest(payload)
-      .success(function () {
-        $rootScope.$emit('notification', 'success', 'The check execution request has been issued');
-      })
-      .error(function (error) {
-        $rootScope.$emit('notification', 'error', 'Could not issue the check execution request');
-        console.error(error);
-      });
+serviceModule.service('Checks', ['Helpers', 'Notification', '$q', '$resource', 'Silenced',
+function (Helpers, Notification, $q, $resource, Silenced) {
+  var Request = $resource('request', null,
+    {'publish': {method: 'POST'}}
+  );
+  this.issueCheckRequest = function(dc, name, subscribers) {
+    var request = new Request({check: name, dc: dc, subscribers: subscribers});
+    return request.$publish();
+  };
+  this.issueMulipleCheckRequest = function(filtered, selected) {
+    var self = this;
+    var promises = [];
+    var toIssue = Helpers.getSelected(filtered, selected);
+
+    angular.forEach(toIssue, function(item) {
+      promises.push(self.issueCheckRequest(item.dc, item.name, item.subscribers));
+    });
+
+    $q.all(promises).then(
+    function() {
+      if (promises.length === 1) {
+        Notification.success('The check request for '+ toIssue[0].name +' has been issued');
+        return;
+      }
+      Notification.success(promises.length + ' check requests have been issued');
+    },
+    function () {
+      if (promises.length === 1) {
+        Notification.error('Could not issue the check request '+ toIssue[0].name);
+        return;
+      }
+      Notification.error('Could not issue all check requests');
+    });
+  };
+  this.silence = function(filtered, selected) {
+    var itemsToSilence = Helpers.getSelected(filtered, selected);
+    Silenced.create(null, itemsToSilence);
   };
 }]);
 
 /**
 * Clients Services
 */
-serviceModule.service('clientsService', ['$location', '$rootScope', 'backendService', function ($location, $rootScope, backendService) {
-  this.deleteCheckResult = function(id) {
-    return backendService.deleteCheckResult(id)
-      .success(function () {
-        delete $location.$$search.check;
-        $location.$$compose();
-        $rootScope.$emit('notification', 'success', 'The check result has been deleted.');
-      })
-      .error(function (error) {
-        $rootScope.$emit('notification', 'error', 'Could not delete the result of the check '+ id);
-        console.error(error);
-      });
+serviceModule.service('Clients', ['Events', '$filter', 'Helpers', '$location', 'Notification', '$q', '$resource', 'Results', '$rootScope', 'Silenced',
+function (Events, $filter, Helpers, $location, Notification, $q, $resource, Results, $rootScope, Silenced) {
+  var Clients = $resource('clients/:name/:history',
+    {name: '@name', history: '@history'}
+  );
+  var self = this;
+  this.delete = function(id) {
+    var attributes = Helpers.splitId(id);
+    return Clients.delete({name: attributes[1], dc: attributes[0]}).$promise;
   };
-  this.deleteClient = function(id) {
-    return backendService.deleteClient(id)
-      .success(function () {
-        $rootScope.$emit('notification', 'success', 'The client has been deleted.');
-      })
-      .error(function (error) {
-        $rootScope.$emit('notification', 'error', 'Could not delete the client '+ id);
-        console.error(error);
-      });
+  this.deleteCheckResult = function(id) {
+    return Results.delete(id);
+  };
+  this.deleteMultiple = function(filtered, selected) {
+    return Helpers.deleteMultiple(self.delete, filtered, selected).
+    then(
+      function(result) {
+        Notification.success('The clients have been deleted');
+        return result;
+      },
+      function() {
+        Notification.error('Could not delete all of the clients');
+        return $q.reject();
+      }
+    );
+  };
+  this.deleteSingle = function(id) {
+    return self.delete(id)
+    .then(
+      function() {
+        $rootScope.skipOneRefresh = true;
+        Notification.success('The client '+ id +' has been deleted');
+      },
+      function(error) {
+        Notification.error('Could not delete the client '+ id);
+        return $q.reject(error);
+      }
+    );
+  };
+  // findCheckHistory returns a specific check from the client's history
+  this.findCheckHistory = function(history, name) {
+    var deferred = $q.defer();
+    if (angular.isUndefined(history) || angular.isUndefined(name)) {
+      deferred.reject();
+    }
+    else {
+      deferred.resolve(history.filter(function(item) {
+        return item.check === name;
+      })[0]);
+    }
+    return deferred.promise;
+  };
+  // findPanels extracts iframes & images from the lastResult hash to their own hash
+  this.findPanels = function(lastResult) {
+    if (angular.isUndefined(lastResult) || lastResult === null) {
+      return $q.reject();
+    }
+    var promises = {};
+    angular.forEach(lastResult, function(value, key) {
+      // Issue 558: do not move an image from the command attribute to its own box
+      if (key === 'command') {
+        return true;
+      }
+      if (/<img src=/.test(value) || /<span class="iframe">/.test(value)) {
+        promises[key] = value;
+        delete lastResult[key];
+      }
+    });
+    return $q.all(promises);
   };
   this.resolveEvent = function(id) {
-    return backendService.deleteEvent(id)
-      .success(function () {
-        $rootScope.$emit('notification', 'success', 'The event has been resolved.');
-      })
-      .error(function (error) {
-        $rootScope.$emit('notification', 'error', 'The event "'+id+'" was not resolved.');
-        console.error(error);
-      });
+    return Events.resolveSingle(id);
   };
-  this.searchCheckHistory = function(name, history) {
-    return history.filter(function (item) {
-      return item.check === name;
-    })[0];
+  // richOutput applies rich HTML to the lastResult attributes
+  this.richOutput = function(lastResult) {
+    if (angular.isUndefined(lastResult) || lastResult === null) {
+      return $q.reject();
+    }
+    var promises = {};
+    angular.forEach(lastResult, function(value, key) {
+      // Do not run the richOutput filter on the status
+      if (key === 'status') {
+        promises[key] = value;
+        return true;
+      }
+      promises[key] = $filter('richOutput')(value);
+    });
+    return $q.all(promises);
+  };
+  this.silence = function(filtered, selected) {
+    var itemsToSilence = Helpers.getSelected(filtered, selected);
+    Silenced.create(null, itemsToSilence);
   };
 }]);
 
 /**
-* Filter
+* Config Services
 */
-serviceModule.service('filterService', function () {
-  this.comparator = function(actual, expected) {
-    if (angular.isUndefined(expected) || expected === '') {
-      return true;
+serviceModule.service('Config', ['DefaultConfig', '$resource', '$rootScope',
+function(DefaultConfig, $resource, $rootScope) {
+  var Config = $resource('config', null, null);
+  var self = this;
+  this.appName = function() {
+    if (self.enterprise()) {
+      return 'Sensu Enterprise Console';
     }
-    return angular.equals(actual, expected);
+    return 'Uchiwa';
   };
-});
+  this.dateFormat = function() {
+    return DefaultConfig.DateFormat;
+  };
+  this.defaultExpireOnResolve = function() {
+    return DefaultConfig.DefaultExpireOnResolve;
+  };
+  this.defaultTheme = function() {
+    if (self.enterprise()) {
+      return 'sensu-enterprise';
+    }
+    return DefaultConfig.DefaultTheme;
+  };
+  this.disableNoExpiration = function() {
+    return DefaultConfig.DisableNoExpiration;
+  };
+  this.enterprise = function() {
+    return $rootScope.enterprise;
+  };
+  this.get = function() {
+    return Config.get();
+  };
+  this.logoURL = function() {
+    if (self.enterprise()) {
+      return 'img/logo.png';
+    }
+    return DefaultConfig.LogoURL;
+  };
+  this.refresh = function() {
+    return DefaultConfig.Refresh;
+  };
+}]);
 
 /**
-* Navbar
+* Events
 */
-serviceModule.service('navbarServices', ['$rootScope', function ($rootScope) {
-  this.health = function () {
-    var alerts = [];
-    if (angular.isObject($rootScope.health)) {
-      angular.forEach($rootScope.health.sensu, function(value, key) {
-        if (value.output !== 'ok') {
-          alerts.push('Datacenter <strong>' + key + '</strong> returned: <em>' + value.output + '</em>');
-        }
-      });
-    }
-    $rootScope.alerts = alerts;
+serviceModule.service('Events', ['Helpers', 'Notification', '$q', '$resource', '$rootScope', 'Silenced',
+function(Helpers, Notification, $q, $resource, $rootScope, Silenced) {
+  var Events = $resource('events/:client/:check',
+    {check: '@check', client: '@client'}
+  );
+  var self = this;
+  this.resolve = function(id) {
+    var attributes = Helpers.splitId(id);
+    var variables = Helpers.splitId(attributes[1]);
+    return Events.delete({check: variables[1], client: variables[0], dc: attributes[0]}).$promise;
+  };
+  this.resolveMultiple = function(filtered, selected) {
+    return Helpers.deleteMultiple(self.resolve, filtered, selected)
+    .then(
+      function(result) {
+        Notification.success('The events have been resolved');
+        return result;
+      },
+      function() {
+        Notification.error('Could not resolve all of the events');
+        return $q.reject();
+      }
+    );
+  };
+  this.resolveSingle = function(id) {
+    return self.resolve(id)
+    .then(
+      function() {
+        $rootScope.skipOneRefresh = true;
+        Notification.success('The event '+ id +' has been resolved');
+      },
+      function(error) {
+        Notification.error('Could not resolve the event '+ id);
+        return $q.reject(error);
+      }
+    );
+  };
+  this.silence = function(filtered, selected) {
+    var itemsToSilence = Helpers.getSelected(filtered, selected);
+    Silenced.create(null, itemsToSilence);
+  };
+}]);
+
+/**
+* Results
+*/
+serviceModule.service('Results', ['Helpers', 'Notification', '$q', '$resource', '$rootScope',
+function(Helpers, Notification, $q, $resource, $rootScope) {
+  var Results = $resource('results/:client/:check',
+    {check: '@check', client: '@client'}
+  );
+  this.delete = function(id) {
+    var attributes = Helpers.splitId(id);
+    var variables = Helpers.splitId(attributes[1]);
+    return Results.delete({check: variables[1], client: variables[0], dc: attributes[0]})
+    .$promise.then(
+      function() {
+        $rootScope.skipOneRefresh = true;
+        Notification.success('The check result '+ id +' has been deleted');
+      },
+      function(error) {
+        Notification.error('Could not delete the check result '+ id);
+        return $q.reject(error);
+      }
+    );
   };
 }]);
 
@@ -314,21 +434,59 @@ serviceModule.service('routingService', ['$location', function ($location) {
 }]);
 
 /**
+* Sidebar
+*/
+serviceModule.service('Sidebar', function () {
+  this.getAlerts = function(health) {
+    var alerts = [];
+    if (angular.isDefined(health) && angular.isObject(health)) {
+      if (angular.isObject(health.sensu)) {
+        angular.forEach(health.sensu, function(value, key) {
+          if (value.status !== 0) {
+            alerts.push('Datacenter <strong>' + key + '</strong> returned: <em>' + value.output + '</em>');
+          }
+        });
+      } else {
+        alerts.push(health.uchiwa);
+      }
+
+    } else {
+      console.error('Unexpected health object: ' + JSON.stringify(health));
+    }
+    return alerts;
+  };
+});
+
+/**
 * Silenced
 */
-serviceModule.service('silencedService', ['backendService', 'conf', '$filter', '$modal', '$rootScope',
-  function (backendService, conf, $filter, $modal, $rootScope) {
+serviceModule.service('Silenced', ['Helpers', 'Notification', '$q', '$resource', '$rootScope', '$uibModal',
+  function (Helpers, Notification, $q, $resource, $rootScope, $uibModal) {
+    var Silenced = $resource('silenced/:action/:name',
+      {action: '@action', name: '@name'},
+      {'clear': {method: 'POST'}, 'create': {method: 'POST'}}
+    );
+    var self = this;
+    this.clearEntries = function(entries) {
+      var promises = [];
+
+      angular.forEach(entries, function(entry) {
+        if (entry.selected) {
+          promises.push(self.delete(entry._id));
+        }
+      });
+      return $q.all(promises);
+    };
     this.create = function (e, i) {
-      var items = _.isArray(i) ? i : new Array(i);
+      var items = angular.isArray(i) ? i : new Array(i);
       var event = e || window.event;
       if (angular.isDefined(event)) {
         event.stopPropagation();
       }
-
       if (items.length === 0) {
-        $rootScope.$emit('notification', 'error', 'No items selected');
+        Notification.error('No items selected');
       } else {
-        var modalInstance = $modal.open({ // jshint ignore:line
+        var modalInstance = $uibModal.open({ // jshint ignore:line
           templateUrl: $rootScope.partialsPath + '/modals/silenced.html',
           controller: 'SilencedModalController',
           resolve: {
@@ -339,69 +497,166 @@ serviceModule.service('silencedService', ['backendService', 'conf', '$filter', '
         });
       }
     };
-    this.find = function(items, id) {
-      for (var i = 0, len = items.length; i < len; i++) {
-        if (angular.isObject(items[i]) && angular.isDefined(items[i]._id)) {
-          if (items[i]._id === id) {
-            return items[i];
-          }
-        }
+    this.createEntries = function(items, itemType, options) {
+      var promises = [];
+
+      if (itemType === 'subscription') {
+        items.push({dc: options.ac.dc, silenced: false, subscription: options.ac.subscription});
       }
-      return null;
-    };
-    this.post = function(payload) {
-      return backendService.postSilenced(payload)
-        .success(function () {
-          $rootScope.$emit('notification', 'success', 'The silenced entry has been created.');
-        })
-        .error(function (error) {
-          $rootScope.$emit('notification', 'error', 'The silenced entry was not created.');
-          console.error(error);
-        });
+      angular.forEach(items, function(item) {
+        if (angular.isObject(item) && !item.silenced) {
+          var payload = {dc: item.dc};
+          if (angular.isDefined(options.expire_on_resolve)) { // jshint ignore:line
+            payload.expire_on_resolve = options.expire_on_resolve; // jshint ignore:line
+          }
+          if (angular.isDefined(options.reason)) {
+            payload.reason = options.reason;
+          }
+          if (options.expire === 'custom') {
+            var now = new Date().getTime();
+            payload.expire = Helpers.secondsBetweenDates(now, options.to);
+	  } else if (options.expire === 'tomorrow') {
+            var now = new Date().getTime();
+            var end = moment(options.time, 'HH:mm:ss').add(1, 'day').toDate();
+            payload.expire = Helpers.secondsBetweenDates(now, end);
+          } else if (options.expire === 'monday') {
+            var now = new Date().getTime();
+            var end = moment(options.time, 'HH:mm:ss').day(8).toDate();
+            payload.expire = Helpers.secondsBetweenDates(now, end);
+          } else if (options.expire > 0) {
+            payload.expire = options.expire;
+          }
+
+          // Determine the subscription
+          if (itemType === 'client') {
+            payload.subscription = 'client:' + item.name;
+          } else if (itemType === 'subscription') {
+            payload.subscription = item.subscription;
+          } else {
+            if (angular.isDefined(item.client)) {
+              payload.subscription = 'client:';
+              payload.subscription += item.client.name || item.client;
+            }
+            if (angular.isDefined(item.check)) {
+              payload.check = item.check.name || item.check;
+            } else {
+              payload.check = item.name;
+            }
+          }
+          promises.push(self.post(payload));
+        }
+      });
+      return $q.all(promises);
     };
     this.delete = function(id) {
-      var resources = backendService.getResources(id);
-      var payload = {dc: resources[0], id: resources[1]};
-      return backendService.deleteSilenced(payload)
-        .success(function () {
-          $rootScope.$emit('notification', 'success', 'The silenced entry has been deleted.');
-        })
-        .error(function (error) {
-          $rootScope.$emit('notification', 'error', 'The silenced entry was not deleted.');
-          console.error(error);
-        });
+      var attributes = Helpers.splitId(id);
+      var entry = new Silenced({dc: attributes[0], id: attributes[1]});
+      return entry.$clear({action: 'clear'});
     };
-    this.secondsBetweenDates = function(start, end) {
-      if (angular.isUndefined(start) || angular.isUndefined(end)) {
-        return 'unknown';
-      }
-
-      var amDifference = $filter('amDifference');
-      return amDifference(moment(end), moment(start), 'seconds');
+    this.deleteSingle = function(id) {
+      return self.delete(id)
+      .then(
+        function() {
+          $rootScope.skipOneRefresh = true;
+          Notification.success('The silence entry '+ id +' has been cleared');
+        },
+        function(error) {
+          Notification.error('Could not clear the silence entry '+ id);
+          return $q.reject(error);
+        }
+      );
+    };
+    this.deleteMultiple = function(filtered, selected) {
+      return Helpers.deleteMultiple(self.delete, filtered, selected)
+      .then(
+        function(result) {
+          Notification.success('The silence entries have been cleared');
+          return result;
+        },
+        function() {
+          Notification.error('Could not clear all of the silence entries');
+          return $q.reject();
+        }
+      );
+    };
+    this.findEntriesFromItems = function(entries, items) {
+      var foundEntries = [];
+      angular.forEach(items, function(item) {
+        // If the item does not have a silenced attribute, set it to false
+        if (angular.isDefined(item) && angular.isUndefined(item.silenced)) {
+          item.silenced = false;
+          return;
+        }
+        // Is the item silenced?
+        if (angular.isDefined(item) && item.silenced) {
+          // Do we have a client?
+          if (angular.isUndefined(item.silenced_by)) { // jshint ignore:line
+            item.silenced_by = ['client:' + item.name + ':*']; // jshint ignore:line
+          }
+          angular.forEach(item.silenced_by, function(id){ // jshint ignore:line
+            var _id = item.dc + ':' + id;
+            // Make sure we don't already have the entry
+            if (Helpers.findIdInItems(_id, foundEntries) === null) {
+              var entry = Helpers.findIdInItems(_id, entries);
+              if (entry !== null) {
+                entry.selected = true;
+                foundEntries.push(entry);
+              }
+            }
+          });
+        }
+      });
+      return foundEntries;
+    };
+    this.post = function(payload) {
+      var entry = new Silenced(payload);
+      return entry.$create();
+    };
+    this.query = function() {
+      return Silenced.query();
     };
 }]);
 
 /**
 * Stashes
 */
-serviceModule.service('stashesService', ['backendService', 'conf', '$filter', '$modal', '$rootScope',
-  function (backendService, conf, $filter, $modal, $rootScope) {
-    this.deleteStash = function (id) {
-      return backendService.deleteStash(id)
-        .success(function () {
-          $rootScope.$emit('notification', 'success', 'The stash has been deleted.');
-        })
-        .error(function (error) {
-          $rootScope.$emit('notification', 'error', 'The stash was not deleted.');
-          console.error(error);
-        });
+serviceModule.service('Stashes', ['Helpers', 'Notification', '$q', '$resource', '$rootScope',
+  function (Helpers, Notification, $q, $resource, $rootScope) {
+    var Stashes = $resource('stashes/:path', {path: '@action'});
+    var self = this;
+    this.create = function(payload) {
+      var stash = new Stashes(payload);
+      return stash.$save();
     };
-    this.find = function(stashes, item) {
-      var path = this.getPath(item);
-      return _.findWhere(stashes, {
-        dc: item.dc,
-        path: path
-      });
+    this.delete = function(id) {
+      var attributes = Helpers.splitId(id);
+      return Stashes.delete({path: attributes[1], dc: attributes[0]}).$promise;
+    };
+    this.deleteMultiple = function(filtered, selected) {
+      return Helpers.deleteMultiple(self.delete, filtered, selected)
+      .then(
+        function(result) {
+          Notification.success('The stashes have been deleted');
+          return result;
+        },
+        function() {
+          Notification.error('Could not delete all of the stashes');
+          return $q.reject();
+        }
+      );
+    };
+    this.deleteSingle = function(id) {
+      return self.delete(id)
+      .then(
+        function() {
+          $rootScope.skipOneRefresh = true;
+          Notification.success('The stash '+ id +' has been deleted');
+        },
+        function(error) {
+          Notification.error('Could not delete the stash '+ id);
+          return $q.reject(error);
+        }
+      );
     };
     this.get = function(stashes, id) {
       for (var i = 0, len = stashes.length; i < len; i++) {
@@ -413,179 +668,29 @@ serviceModule.service('stashesService', ['backendService', 'conf', '$filter', '$
       }
       return null;
     };
-    this.getPath = function(item) {
-      var path = ['silence'];
-      var hasCheck = true;
+}]);
 
-      // get client name
-      if (angular.isUndefined(item) || !angular.isObject(item)) {
-        $rootScope.$emit('notification', 'error', 'Cannot handle this stash. Try to refresh the page.');
-        return false;
-      }
-      else {
-        if (angular.isUndefined(item.client)) {
-          path.push(item.name);
-          hasCheck = false;
-        }
-        else {
-          if (angular.isObject(item.client)) {
-            path.push(item.client.name);
-          }
-          else {
-            path.push(item.client);
-          }
-        }
-      }
-
-      // get check name
-      if (hasCheck && angular.isDefined(item.check)) {
-        if (angular.isObject(item.check)) {
-          path.push(item.check.name);
-        }
-        else {
-          path.push(item.check);
-        }
-      }
-
-      return path.join('/');
-    };
-    this.submit = function (element, item) {
-      var dc = element.dc;
-      var isAcknowledged = element.acknowledged;
-      var path = this.getPath(element);
-
-      if (angular.isUndefined(item.reason)) {
-        item.reason = '';
-      }
-
-      if (isAcknowledged) {
-        return backendService.deleteStash(dc+'/'+path)
-          .success(function () {
-            $rootScope.skipOneRefresh = true;
-            $rootScope.$emit('notification', 'success', 'The stash has been deleted.');
-            element.acknowledged = !element.acknowledged;
-          })
-          .error(function (error) {
-            $rootScope.$emit('notification', 'error', 'The stash was not created. ' + error);
-          });
-      }
-      else {
-        var payload = {content: {'reason': item.reason, 'source': 'uchiwa'}, dc: dc, path: path};
-
-        // add expire attribute
-        if (item.expiration && item.expiration !== -1){
-          payload.expire = item.expiration;
-        }
-
-        // add timestamp attribute
-        if (angular.isUndefined(payload.content.timestamp)) {
-          payload.content.timestamp = Math.floor(new Date()/1000);
-        }
-        else {
-          payload.content.timestamp = item.content.timestamp;
-        }
-
-        // post payload
-        return backendService.postStash(payload)
-          .success(function () {
-            $rootScope.skipOneRefresh = true;
-            $rootScope.$emit('notification', 'success', 'The stash has been created.');
-            element.acknowledged = !element.acknowledged;
-          })
-          .error(function (error) {
-            $rootScope.$emit('notification', 'error', 'The stash was not created. ' + error);
-          });
-      }
+/**
+* Subscriptions
+*/
+serviceModule.service('Subscriptions', ['$resource',
+  function ($resource) {
+    var Subscriptions = $resource('subscriptions');
+    this.query = function() {
+      return Subscriptions.query();
     };
 }]);
 
 /**
-* Helpers service
+* User Config
 */
-serviceModule.service('helperService', ['$filter', '$q', '$rootScope',
-function($filter, $q, $rootScope) {
-  this.deleteItems = function(fn, filtered, selected) {
-    var promises = [];
-    angular.forEach(selected.ids, function(value, key) {
-      if (value) {
-        var deffered = $q.defer();
-        selected.ids[key] = false;
-        fn(key).then(function() {
-          filtered = $filter('filter')(filtered, {_id: '!'+key});
-          deffered.resolve(key);
-        }, function() {
-          deffered.reject();
-        });
-        promises.push(deffered.promise);
-      }
-    });
-    selected.all = false;
-    $rootScope.skipOneRefresh = true;
-    return $q.all(promises).then(function() {
-      return filtered;
-    });
+serviceModule.service('UserConfig', ['$cookieStore',
+function ($cookieStore) {
+  this.get = function(name) {
+    return $cookieStore.get(name) || false;
   };
-  // getSelected returns all filtered objects that are selected and unselected them
-  this.getSelected = function(filtered, selected) {
-    var items = [];
-    angular.forEach(selected.ids, function(value, key) {
-      if (value) {
-        var found = $filter('filter')(filtered, {_id: key});
-        if (found.length) {
-          items.push(found[0]);
-          selected.ids[key] = false;
-        }
-      }
-    });
-    selected.all = false;
-    return items;
-  };
-  // Stop event propagation if an A tag is clicked
-  this.openLink = function($event) {
-    if($event.srcElement.tagName === 'A'){
-      $event.stopPropagation();
-    }
-  };
-  this.selectAll = function(filtered, selected) {
-    angular.forEach(filtered, function(value) {
-      selected.ids[value._id] = selected.all;
-    });
-  };
-  this.silenceItems = function(fn, filtered, selected) {
-    var itemsToSilence = [];
-    angular.forEach(selected.ids, function(value, key) {
-      if (value) {
-        var found = $filter('filter')(filtered, {_id: key});
-        if (found.length) {
-          itemsToSilence.push(found[0]);
-          selected.ids[key] = false;
-        }
-      }
-    });
-    fn(null, itemsToSilence);
-    selected.all = false;
-  };
-  // updateSelected updates the selected array to remove any filtered items
-  this.updateSelected = function(newValues, oldValues, filtered, selected) {
-    // Check if we need to exclude any items
-    var excludeItems = false;
-    for (var i = 0; i < newValues.length; i++) {
-      if ((newValues[i] !== '' && newValues[i]) && oldValues[i] !== newValues[i]) {
-        excludeItems = true;
-        break;
-      }
-    }
-    if (!excludeItems) {
-      return;
-    }
-    angular.forEach(selected.ids, function(value, key) {
-      if (value) {
-        var found = $filter('filter')(filtered, {_id: key});
-        if (!found.length) {
-          selected.ids[key] = false;
-        }
-      }
-    });
+  this.set = function(name, value) {
+    $cookieStore.put(name, value);
   };
 }]);
 
@@ -612,7 +717,6 @@ function ($cookieStore, $location, $rootScope) {
   this.logout = function () {
     $cookieStore.remove('uchiwa_auth');
     $rootScope.auth = false;
-    $rootScope.config = false;
     $location.path('login');
   };
 }]);
