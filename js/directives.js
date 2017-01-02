@@ -2,6 +2,21 @@
 
 var directiveModule = angular.module('uchiwa.directives', []);
 
+
+directiveModule.directive('aggregateResult', ['$rootScope', function ($rootScope) {
+  return {
+    restrict: 'E',
+    scope: {
+      aggregate: '=',
+      dc: '=',
+      go: '=',
+      name: '=',
+      severity: '@'
+    },
+    templateUrl: $rootScope.partialsPath + '/directives/aggregate-result.html'
+  };
+}]);
+
 // clientSummary generate the client key/value panel on the client view
 directiveModule.directive('clientSummary', ['$filter', '$rootScope', function ($filter, $rootScope) {
   return {
@@ -34,6 +49,21 @@ directiveModule.directive('clientSummary', ['$filter', '$rootScope', function ($
   };
 }]);
 
+directiveModule.directive('logoUrl', ['Config', function (Config) {
+  return {
+    restrict: 'E',
+    link: function(scope) {
+      scope.src = '';
+      if (Config.logoURL() === '') {
+        scope.src = 'bower_components/uchiwa-web/img/uchiwa.png';
+      } else {
+        scope.src = Config.logoURL();
+      }
+    },
+    template: '<img ng-src="{{src}}">'
+  };
+}]);
+
 directiveModule.directive('panelActions', ['$rootScope', function ($rootScope) {
   return {
     restrict: 'E',
@@ -61,24 +91,6 @@ directiveModule.directive('panelLimit', ['$rootScope', function ($rootScope) {
   };
 }]);
 
-directiveModule.directive('uwProgressBar', ['$filter', '$rootScope', function ($filter, $rootScope) {
-  return {
-    restrict: 'E',
-    scope: {
-      aggregate: '='
-    },
-    templateUrl: $rootScope.partialsPath + '/directives/progress-bar.html',
-    link: function (scope, element, attrs) {
-      attrs.$observe('aggregate', function() {
-        scope.critical = $filter('number')(scope.aggregate.critical / scope.aggregate.total * 100, 0);
-        scope.success = $filter('number')(scope.aggregate.ok / scope.aggregate.total * 100, 0);
-        scope.unknown = $filter('number')(scope.aggregate.unknown / scope.aggregate.total * 100, 0);
-        scope.warning = $filter('number')(scope.aggregate.warning / scope.aggregate.total * 100, 0);
-      });
-    }
-  };
-}]);
-
 directiveModule.directive('relativeTime', ['$filter', '$rootScope', function ($filter, $rootScope) {
   return {
     restrict: 'E',
@@ -91,6 +103,19 @@ directiveModule.directive('relativeTime', ['$filter', '$rootScope', function ($f
       }
     },
     templateUrl: $rootScope.partialsPath + '/directives/relative-time.html'
+  };
+}]);
+
+directiveModule.directive('sidebarPopover', ['$rootScope', function ($rootScope) {
+  return {
+    restrict: 'E',
+    scope: {
+      hasCriticity: '=',
+      metrics: '=',
+      name: '@',
+      pluralized: '@'
+    },
+    templateUrl: $rootScope.partialsPath + '/directives/sidebar-popover.html'
   };
 }]);
 
@@ -107,21 +132,22 @@ directiveModule.directive('silenceIcon', function () {
   };
 });
 
-directiveModule.directive('siteTheme', ['conf', '$cookies', '$rootScope', function (conf, $cookies, $rootScope) {
+directiveModule.directive('siteTheme', ['Config', '$cookies', 'THEMES',
+function (Config, $cookies, THEMES) {
   return {
     restrict: 'EA',
     link: function (scope, element) {
       var lookupTheme = function (themeName) {
-        return $rootScope.themes[$rootScope.themes.map(function (t) {
+        return THEMES[THEMES.map(function (t) {
           return t.name;
         }).indexOf(themeName)];
       };
       var setTheme = function (theme) {
-        var themeName = angular.isDefined(theme) ? theme : conf.theme;
+        var themeName = angular.isDefined(theme) ? theme : Config.defaultTheme();
         scope.currentTheme = lookupTheme(themeName);
 
         if (angular.isUndefined(scope.currentTheme)) {
-          scope.currentTheme = $rootScope.themes[0];
+          scope.currentTheme = THEMES[0];
         }
 
         var name = scope.currentTheme.name;
@@ -129,7 +155,7 @@ directiveModule.directive('siteTheme', ['conf', '$cookies', '$rootScope', functi
 
         var oneYearExpiration = new Date();
         oneYearExpiration.setYear(oneYearExpiration.getFullYear()+1);
-        $cookies.put('uchiwa_theme', name, { 'expires': oneYearExpiration });
+        $cookies.put('theme', name, { 'expires': oneYearExpiration });
 
         var path = enterprise ? 'css/' : 'bower_components/uchiwa-web/css/';
         element.attr('href', path + name + '/' + name + '.css');
@@ -137,7 +163,7 @@ directiveModule.directive('siteTheme', ['conf', '$cookies', '$rootScope', functi
       scope.$on('theme:changed', function (event, theme) {
         setTheme(theme.name);
       });
-      var currentTheme = $cookies.get('uchiwa_theme');
+      var currentTheme = $cookies.get('theme');
       setTheme(currentTheme);
     }
   };

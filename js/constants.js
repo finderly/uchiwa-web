@@ -1,27 +1,16 @@
 var constantModule = angular.module('uchiwa.constants', []);
 
-constantModule.value('conf', {
-  appName: 'Uchiwa',
-  date: 'YYYY-MM-DD HH:mm:ss',
-  time: 'HH:mm:ss',
-  enterprise: false,
-  hideSilenced: false,
-  hideClientsSilenced: false,
-  hideOccurrences: false,
-  refresh: 10000,
-  theme: 'uchiwa-default'
-});
-
-constantModule.value('themes', [
-  {
-    name: 'uchiwa-default'
-  },
-  {
-    name: 'uchiwa-dark'
-  }
+constantModule.value('THEMES', [
+  {name: 'uchiwa-default'},
+  {name: 'uchiwa-dark'}
 ]);
 
+constantModule.value('conf', {
+  date: 'YYYY-MM-DD HH:mm:ss',
+  time: 'HH:mm:ss'
+});
+
 // Version
-constantModule.constant('version', {
-  uchiwa: '0.18.2'
+constantModule.value('VERSION', {
+  uchiwa: '0.21.0'
 });

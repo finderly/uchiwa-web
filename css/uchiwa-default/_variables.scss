@@ -12,6 +12,7 @@ $success-color: #43ac6a !default;
 $unknown-color: #9C9990 !default;
 $info-color: #6A5E98 !default;
 $grey-color: #9DA0A6 !default;
+$silenced-color: #3F283D !default;
 
 /* Body, Sections and Headers */
 $body-background-color: $quaternary-color !default;
@@ -44,6 +45,9 @@ $code-attribute-color: #6d9cbe !default;
 $code-number-color: #85a241 !default;
 $code-literal-color: #85a241 !default;
 $code-string-color: #718c00 !default;
+
+/* Console */
+$collection-text-color: white !default;
 
 /* Dashboard */
 $dashboard-panel-text-color: #FFFFFF !default;

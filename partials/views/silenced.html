@@ -1,6 +1,6 @@
 <ng-include src="partialsPath + '/navbar.html'"></ng-include>
 <ng-include src="partialsPath + '/sidebar.html'"></ng-include>
-<div class="container-fluid silenced">
+<div class="container-fluid silenced" ng-cloak>
   <div class="row-fluid">
     <div class="col-lg-12">
       <div class="panel panel-default">
@@ -16,9 +16,11 @@
               <!--dc-->
               <ng-include src="partialsPath + '/panel/dc.html'"></ng-include>
               <!--actions-->
-              <panel-actions data="silenced" resolve-fn="deleteMultipleSilenced" resolve-legend="Delete" silence-fn="false" ng-if="!user.isReadOnly()"></panel-actions>
+              <panel-actions data="silenced" resolve-fn="deleteMultiple" resolve-legend="Delete" silence-fn="false" ng-if="!user.isReadOnly()"></panel-actions>
               <!--limit-->
-              <panel-limit data="silenced" filters="filters" permalink="permalink"></panel-limit>
+              <panel-limit data="filtered" filters="filters" permalink="permalink"></panel-limit>
+              <!--add-->
+              <ng-include src="partialsPath + '/panel/add-silenced.html'"></ng-include>
               <!--search-->
               <ng-include src="partialsPath + '/panel/search.html'"></ng-include>
             </div>
@@ -27,17 +29,18 @@
 
         <!--panel-body-->
         <div class="panel-body">
-          <table class="table table-hover table-condensed">
+          <table class="table table-hover table-condensed" style="table-layout: fixed;">
             <thead>
               <tr>
-                <th ng-if="!user.isReadOnly()">
+                <th ng-class="user.isReadOnly() ? 'col-min-ro' : 'col-min'">
                   <input type="checkbox" ng-model="selected.all" ng-change="selectAll(filtered, selected)" ng-if="!user.isReadOnly()"></input>
                 </th>
-                <th ng-click="predicate = 'id'; reverse=!reverse">ID <i class="fa fa-sort"></i></th>
-                <th ng-click="predicate = 'dc'; reverse=!reverse"><i class="fa fa-cloud" tooltip-placement="top" tooltip-trigger tooltip="Datacenter"></i> <i class="fa fa-sort"></i></th>
-                <th ng-click="predicate = 'creator'; reverse=!reverse"><i class="fa fa-user" tooltip-placement="top" tooltip-trigger tooltip="Creator"></i> <i class="fa fa-sort"></i></th>
-                <th ng-click="predicate = 'expire_on_resolve'; reverse=!reverse"><i class='fa fa-calendar-check-o' tooltip-placement="top" tooltip-trigger tooltip="Expire on Resolve"></i> <i class="fa fa-sort"></i></th>
-                <th ng-click="predicate = 'expire'; reverse=!reverse"><i class='fa fa-hourglass-end' tooltip-placement="top" tooltip-trigger tooltip="Expiration"></i> <i class="fa fa-sort"></i></th>
+                <th class="col-sm-3" ng-click="predicate = 'id'; reverse=!reverse">ID <i class="fa fa-sort"></i></th>
+                <th class="col-dc" ng-click="predicate = 'dc'; reverse=!reverse"><i class="fa fa-cloud" tooltip-placement="top" tooltip-trigger uib-tooltip="Datacenter"></i> <i class="fa fa-sort"></i></th>
+                <th class="col-sm-5" ng-click="predicate = 'reason'; reverse=!reverse"><i class="fa fa-commenting-o" tooltip-placement="top" tooltip-trigger uib-tooltip="Reason"></i> <i class="fa fa-sort"></i></th>
+                <th ng-click="predicate = 'creator'; reverse=!reverse"><i class="fa fa-user" tooltip-placement="top" tooltip-trigger uib-tooltip="Creator"></i> <i class="fa fa-sort"></i></th>
+                <th ng-click="predicate = 'expire_on_resolve'; reverse=!reverse"><i class='fa fa-calendar-check-o' tooltip-placement="top" tooltip-trigger uib-tooltip="Expire on Resolve"></i> <i class="fa fa-sort"></i></th>
+                <th ng-click="predicate = 'expire'; reverse=!reverse"><i class='fa fa-hourglass-end' tooltip-placement="top" tooltip-trigger uib-tooltip="Expiration"></i> <i class="fa fa-sort"></i></th>
               </tr>
             </thead>
             <tbody>
@@ -46,10 +49,14 @@
                   <input type="checkbox" ng-model="selected.ids[entry._id]"></input>
                 </td>
                 <td class="main">
-                  <span ng-if="!user.isReadOnly()"><i class="fa fa-times" ng-click="deleteSilenced($event, entry._id);"></i></span>{{ entry.id }}
+                  <span ng-if="!user.isReadOnly()"><i class="fa fa-times" ng-click="delete($event, entry._id);"></i></span>{{ entry.id }}
                 </td>
                 <td class="dc">{{ entry.dc }}</td>
-                <td>{{ entry.creator }}</td>
+                <td class="output" ng-bind-html="entry.reason"></td>
+                <td>
+                  {{ entry.creator }}
+                  <span ng-if="entry.creator === null">N/A</span>
+                </td>
                 <td>{{ entry.expire_on_resolve }}</td>
                 <td>{{ entry.expire | getExpirationTimestamp }}</td>
               </tr>

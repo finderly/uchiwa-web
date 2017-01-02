@@ -1,27 +1,36 @@
 'use strict';
 
 angular.module('uchiwa', [
+  'uchiwa.common',
   'uchiwa.controllers',
   'uchiwa.constants',
   'uchiwa.directives',
   'uchiwa.factories',
   'uchiwa.filters',
-  'uchiwa.providers',
   'uchiwa.services',
   // Angular dependencies
   'ngCookies',
+  'ngResource',
   'ngRoute',
   'ngSanitize',
   // 3rd party dependencies
   'angularMoment',
+  'MassAutoComplete',
   'toastr',
   'ui.bootstrap',
   'ui.gravatar'
 ]);
 
 angular.module('uchiwa')
-.config(['$httpProvider', '$routeProvider', '$tooltipProvider',
-  function ($httpProvider, $routeProvider, $tooltipProvider) {
+.config(['$httpProvider', '$routeProvider', 'toastrConfig', '$uibTooltipProvider',
+  function ($httpProvider, $routeProvider, toastrConfig, $uibTooltipProvider) {
+    // Toastr configuration
+    angular.extend(toastrConfig, {
+      positionClass: 'toast-bottom-right',
+      preventOpenDuplicates: true,
+      timeOut: 7500
+    });
+
     // Token injection
     $httpProvider.interceptors.push('authInterceptor');
 
@@ -30,7 +39,7 @@ angular.module('uchiwa')
       .when('/', {redirectTo: function () {
         return '/events';
       }})
-      .when('/aggregates/:dc/:name', {templateUrl: 'bower_components/uchiwa-web/partials/views/aggregate.html', reloadOnSearch: false, controller: 'AggregateController'})
+      .when('/aggregates/:dc/:name/:members?/:severity?', {templateUrl: 'bower_components/uchiwa-web/partials/views/aggregate.html', reloadOnSearch: false, controller: 'AggregateController'})
       .when('/aggregates', {templateUrl: 'bower_components/uchiwa-web/partials/views/aggregates.html', reloadOnSearch: false, controller: 'AggregatesController'})
       .when('/checks', {templateUrl: 'bower_components/uchiwa-web/partials/views/checks.html', reloadOnSearch: false, controller: 'ChecksController'})
       .when('/client/:dc/:client', {templateUrl: 'bower_components/uchiwa-web/partials/views/client.html', reloadOnSearch: false, controller: 'ClientController'})
@@ -42,37 +51,26 @@ angular.module('uchiwa')
       .when('/settings', {templateUrl: 'bower_components/uchiwa-web/partials/views/settings.html', controller: 'SettingsController'})
       .when('/silenced', {templateUrl: 'bower_components/uchiwa-web/partials/views/silenced.html', reloadOnSearch: false, controller: 'SilencedController'})
       .when('/silenced/:id*', {templateUrl: 'bower_components/uchiwa-web/partials/views/silenced-entry.html', reloadOnSearch: false, controller: 'SilencedEntryController'})
-      .when('/stash/:id*', {templateUrl: 'bower_components/uchiwa-web/partials/views/stash.html', reloadOnSearch: false, controller: 'StashController'})
       .when('/stashes', {templateUrl: 'bower_components/uchiwa-web/partials/views/stashes.html', reloadOnSearch: false, controller: 'StashesController'})
+      .when('/stashes/:id*', {templateUrl: 'bower_components/uchiwa-web/partials/views/stash.html', reloadOnSearch: false, controller: 'StashController'})
       .otherwise('/');
 
-    $tooltipProvider.options({animation: false, 'placement': 'bottom'});
+    $uibTooltipProvider.options({animation: false, 'placement': 'bottom'});
   }
 ])
-.run(function (backendService, conf, themes, $cookieStore, $location, notification, $rootScope, titleFactory) {
-  $rootScope.alerts = [];
-  $rootScope.events = [];
+.run(function (backendService, $cookieStore, $location, $rootScope, titleFactory) {
   $rootScope.partialsPath = 'bower_components/uchiwa-web/partials';
   $rootScope.skipOneRefresh = false;
   $rootScope.showCollectionBar = true;
-  $rootScope.enterprise = conf.enterprise;
-  $rootScope.themes = themes;
+  $rootScope.enterprise = false;
 
   $rootScope.titleFactory = titleFactory;
-
-  backendService.getConfig();
 
   // fetch the sensu data on every page change
   $rootScope.$on('$routeChangeSuccess', function () {
     $rootScope.auth = $cookieStore.get('uchiwa_auth') || false;
     if ($location.path().substring(0, 6) !== '/login') {
       backendService.getDatacenters();
-    }
-  });
-
-  $rootScope.$on('notification', function (event, type, message) {
-    if ($location.path() !== '/login') {
-      notification(type, message);
     }
   });
 });
