@@ -517,11 +517,11 @@ serviceModule.service('Silenced', ['Helpers', 'Notification', '$q', '$resource',
             payload.expire = Helpers.secondsBetweenDates(now, options.to);
 	  } else if (options.expire === 'tomorrow') {
             var now = new Date().getTime();
-            var end = moment(options.time, 'HH:mm:ss').add(1, 'day').toDate();
+            var end = moment(options.time, 'HH:mm:ss').add(1, 'day').toDate().getTime();
             payload.expire = Helpers.secondsBetweenDates(now, end);
           } else if (options.expire === 'monday') {
             var now = new Date().getTime();
-            var end = moment(options.time, 'HH:mm:ss').day(8).toDate();
+            var end = moment(options.time, 'HH:mm:ss').day(8).toDate().getTime();
             payload.expire = Helpers.secondsBetweenDates(now, end);
           } else if (options.expire > 0) {
             payload.expire = options.expire;

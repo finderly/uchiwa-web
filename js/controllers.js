@@ -718,7 +718,7 @@ controllerModule.controller('SilencedModalController', ['backendService', 'Confi
     }
 
     $scope.entries = [];
-    $scope.options = {ac: {}, expire: 900, reason: '', to: moment().add(1, 'h').format(Config.dateFormat()), time: moment('11:00:00', conf.time).format(conf.time)};
+    $scope.options = {ac: {}, expire: 900, reason: '', to: moment().add(1, 'h').format(Config.dateFormat()), time: moment('11:00:00', 'HH:mm:ss').format('HH:mm:ss')};
 
     // Get silenced entries
     Silenced.query().$promise.then(
